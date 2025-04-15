@@ -154,7 +154,7 @@
 	zephyr,flash-buf-max-size = <24>;
 
 	pcal6524: pcal6524@20 {
-		compatible = "nxp,pcal6524-oot";
+		compatible = "nxp,pcal6524";
 		reg = <0x20>;
 		gpio-controller;
 		#gpio-cells = <2>;
