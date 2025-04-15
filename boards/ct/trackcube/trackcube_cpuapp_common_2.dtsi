@@ -1,0 +1,27 @@
+/*
+ * Cognid NORA-B10 board configuration
+ *
+ * Copyright (c) 2025 COGNID Telematik GmbH
+ */
+
+/ {
+   aliases {
+      /delete-property/ fuelgauge0;
+   };
+};
+
+&led0 {
+   gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
+};
+
+&bq25157 {
+   int-gpios = < &gpio0 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP) >;
+   vio-gpios = < &pcal6524 21 (GPIO_ACTIVE_HIGH) >;
+};
+
+/delete-node/ &stc3115;
+
+// todo:
+// &i2c0 {
+//    ltc2959 ...
+// };

@@ -1,0 +1,7 @@
+/*
+ * Cognid NORA-B10 board configuration
+ *
+ * Copyright (c) 2025 COGNID Telematik GmbH
+ */
+ 
+ #include "trackcube_cpuapp_common_2.dtsi"

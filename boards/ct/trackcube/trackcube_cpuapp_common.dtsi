@@ -1,0 +1,319 @@
+/*
+ * Cognid NORA-B10 board configuration
+ *
+ * Copyright (c) 2025 COGNID Telematik GmbH
+ */
+#include "trackcube_cpuapp_common-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	zephyr,user {
+		io-channels = <&adc 0>;
+		io-channel-names = "uc_voltage";
+	};
+
+	chosen {
+		zephyr,console = &cdc_acm_uart0;
+		zephyr,shell-uart = &cdc_acm_uart0;
+		zephyr,uart-mcumgr = &cdc_acm_uart0;
+		zephyr,bt-mon-uart = &cdc_acm_uart0;
+		zephyr,bt-c2h-uart = &cdc_acm_uart0;
+		zephyr,bt-hci-rpmsg-ipc = &ipc0;
+		nordic,802154-spinel-ipc = &ipc0;
+		zephyr,ieee802154 = &ieee802154;
+		nordic,pm-ext-flash = &w25q256;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpio0 0x3 GPIO_ACTIVE_HIGH>;
+			label = "LED 100";
+		};
+
+		led1: led_1 {
+			gpios = <&gpio0 0x2 GPIO_ACTIVE_HIGH>;
+			label = "LED 101";
+		};
+
+		ledpe: led_pe {
+			gpios = <&pcal6524 4 GPIO_ACTIVE_HIGH>;
+			label = "LED Port Expander";
+		};
+	};
+
+	gpio-outputs {
+		compatible = "gpio-leds"; // Even if they're not an LED, this binding gives us the needed fields
+
+		flash_reset: flash_reset {
+			gpios = <&gpio0 26 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "Flash reset pin";
+		};
+
+		i2c_pullup: i2c_pullup {
+			gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+			label = "I2C Pull-Up Pin";
+		};
+
+		hall_power: hall_power {
+			gpios = <&pcal6524 6 GPIO_ACTIVE_HIGH>;
+			label = "Hall Sensor power pin";
+		};
+	};
+
+	gpio-inputs {
+		compatible = "gpio-keys";
+
+		hall_io: hall_io {
+			gpios = <&pcal6524 5 GPIO_ACTIVE_LOW>;
+			label = "Hall Sensor output pin";
+		};
+	};
+
+	buzzer: buzzer {
+		compatible = "pwm-buzzer";
+		pwms = <&pwm0 0 PWM_HZ(440) PWM_POLARITY_NORMAL>;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		ledpe = &ledpe;
+		bootloader-led0 = &led0;
+		mcuboot-led0 = &led0;
+		watchdog0 = &wdt0;
+		spi-flash0 = &w25q256;
+		accel0 = &lis2dux12;
+		fuelgauge0 = &stc3115;
+	};
+};
+
+&usbd {
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};
+
+&adc {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	uc_voltage: channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,input-positive = <NRF_SAADC_VDD>;
+		zephyr,vref-mv = <600>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <8>;
+	};
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+
+	// MUX is not used => fixed state
+	i2c-mux-hog {
+		gpio-hog;
+		gpios = <27 GPIO_ACTIVE_HIGH>;
+		output-low;  // forward SCL/SDA to STC3115 on Bat
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uicr {
+	nfct-pins-as-gpios;
+};
+
+&i2c0 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	zephyr,concat-buf-size = <24>;
+	zephyr,flash-buf-max-size = <24>;
+
+	pcal6524: pcal6524@20 {
+		compatible = "nxp,pcal6524-oot";
+		reg = <0x20>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <24>;
+		int-gpios = <&gpio0 22 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		reset-gpios = <&gpio0 31 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		status = "okay";
+	};
+
+	stc3115: stc3115@70 {
+		compatible = "st,stc3115";
+		reg = <0x70>;
+		reset-gpios = < &pcal6524 21 (GPIO_ACTIVE_LOW | GPIO_PULL_UP) >;
+		status = "okay";
+		capacity = <5300>;
+		r-sense = <47>;
+		vmode = "mixed";
+		relax-current = <5>;
+//		ocv-offset-table = <(5000) (5000) (5000) (5000) (5000) (5000) (5000) (5000) (5000) (5000) (5000) (5000) (5000) (5000)>;
+	};
+
+	bq25157: bq25157@6b {
+		compatible = "ti,bq25157";
+		reg = <0x6b>;
+		status = "okay";
+		int-gpios = < &pcal6524 17 (GPIO_ACTIVE_LOW | GPIO_PULL_UP) >;
+		manual-reset-gpios = < &pcal6524 20 (GPIO_ACTIVE_LOW | GPIO_PULL_UP) >;
+		power-good-gpios = < &pcal6524 18 (GPIO_PULL_UP | GPIO_ACTIVE_LOW) >;
+		low-power-gpios = < &pcal6524 19 (GPIO_ACTIVE_LOW) >;
+		vio-gpios = < &pcal6524 16 (GPIO_ACTIVE_HIGH) >;
+		battery-voltage-mv = <4100>;
+		termination-current-ua = <0>;
+	};
+};
+
+&spi4 {
+	compatible = "nordic,nrf-spim";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0xa000 0x1000>;
+	interrupts = <10 NRF_DEFAULT_IRQ_PRIORITY>;
+	max-frequency = <DT_FREQ_M(4)>;
+	easydma-maxcnt-bits = <16>;
+	rx-delay-supported;
+	rx-delay = <2>;
+	status = "okay";
+	pinctrl-0 = <&spi4_default>;
+	pinctrl-1 = <&spi4_sleep>;
+	pinctrl-names = "default", "sleep";
+	cs-gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
+
+	lis2dux12: lis2dux12@0 {
+		compatible = "st,lis2dux12";
+		reg = <0>;
+		spi-max-frequency = <1000000>; // Adjust as needed for your application
+		status = "okay";
+		// int1-gpios: nc
+		int2-gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+		drdy-pin = <2>;
+		power-mode = <2>;
+		odr = <8>;
+	};
+};
+
+&qspi {
+	status = "okay";
+	pinctrl-0 = <&qspi_default>;
+	pinctrl-1 = <&qspi_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	w25q256: w25q256jv@0 {
+		compatible = "nordic,qspi-nor";
+		readoc = "read4io";
+		writeoc = "pp4o";
+		reg = <0>;
+		sck-frequency = <133000000>;
+		jedec-id = [ef 60 19];
+		size = <0x10000000>;
+		has-dpd;
+		t-enter-dpd = <3500>;
+		t-exit-dpd = <3500>;
+	};
+};
+
+&pcal6524 {
+	// For now, always power the flash
+	// May be replaced with a GPIO output to cut power to the flash.
+	flash-power-enable {
+		gpio-hog;
+		gpios = <1 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00010000>;
+		};
+
+		slot0_partition: partition@10000 {
+			label = "image-0";
+		};
+
+		slot0_ns_partition: partition@50000 {
+			label = "image-0-nonsecure";
+		};
+
+		slot1_partition: partition@80000 {
+			label = "image-1";
+		};
+
+		slot1_ns_partition: partition@c0000 {
+			label = "image-1-nonsecure";
+		};
+
+		/* 0xf0000 to 0xf7fff reserved for TF-M partitions */
+		storage_partition: partition@f8000 {
+			label = "storage";
+			reg = <0x000f8000 0x00008000>;
+		};
+	};
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+zephyr_udc0: &usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};
+
+/ {
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		sram0_image: image@20000000 {
+			/* Zephyr image(s) memory */
+		};
+
+		sram0_s: image_s@20000000 {
+			/* Secure image memory */
+		};
+
+		sram0_ns: image_ns@20040000 {
+			/* Non-Secure image memory */
+		};
+	};
+};
+
+/* Include partition configuration file */
+#include "trackcube_cpuapp_partition_conf.dtsi"

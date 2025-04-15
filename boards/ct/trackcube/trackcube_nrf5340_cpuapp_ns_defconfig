@@ -1,0 +1,47 @@
+# Cognid NORA-B10 board configuration
+
+# Copyright (c) 2023 u-blox AG
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable hardware stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# Enable TrustZone-M
+CONFIG_ARM_TRUSTZONE_M=y
+
+# This Board implies building Non-Secure firmware
+CONFIG_TRUSTED_EXECUTION_NONSECURE=y
+
+# enable GPIO
+CONFIG_GPIO=y
+
+# Enable uart driver
+CONFIG_SERIAL=y
+
+# enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+CONFIG_PINCTRL=y
+
+CONFIG_USB_DEVICE_STACK=y
+# Nordic vendor ID and some random product ID
+CONFIG_USB_DEVICE_VID=0x1915
+CONFIG_USB_DEVICE_PID=0x1337
+CONFIG_USB_DEVICE_PRODUCT="COGNID Telematik TC"
+CONFIG_USB_CDC_ACM_LOG_LEVEL_OFF=y
+
+# enable flash
+CONFIG_FLASH=y
+
+# Enable I2C
+CONFIG_I2C=y
+
+# init order: gpio -> port expander -> gpio hogs -> flash
+# CONFIG_GPIO_PCA_SERIES_INIT_PRIORITY=60 for upstream driver
+CONFIG_GPIO_PCAL6524_OOT_INIT_PRIORITY=60
+CONFIG_GPIO_HOGS_INIT_PRIORITY=70
+CONFIG_NORDIC_QSPI_NOR_INIT_PRIORITY=80

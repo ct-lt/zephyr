@@ -1,0 +1,22 @@
+# Cognid NORA-B10 board configuration
+
+# Copyright (c) 2023 u-blox AG
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable hardware stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# enable GPIO
+CONFIG_GPIO=y
+
+# Enable uart driver
+CONFIG_SERIAL=n
+
+# enable console
+CONFIG_CONSOLE=n
+CONFIG_UART_CONSOLE=n
+
+CONFIG_PINCTRL=y

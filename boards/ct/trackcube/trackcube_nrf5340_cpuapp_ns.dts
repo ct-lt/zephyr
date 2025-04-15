@@ -1,0 +1,21 @@
+/*
+ * Cognid NORA-B10 board configuration
+ *
+ * Copyright (c) 2023 u-blox AG
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf5340_cpuappns_qkaa.dtsi>
+#include "trackcube_cpuapp_common.dts"
+
+/ {
+	model = "Cognid NORA-B10 NRF5340 Application";
+	compatible = "ct,trackcube-nrf5340-cpuapp";
+
+	chosen {
+		zephyr,sram = &sram0_ns;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_ns_partition;
+	};
+};

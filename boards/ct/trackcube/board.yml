@@ -1,0 +1,14 @@
+board:
+  name: trackcube
+  vendor: ct
+  revision:
+    format: number
+    default: '2'
+    revisions:
+      - name: '1'
+      - name: '2'
+  socs:
+    - name: 'nrf5340'
+      variants:
+        - name: 'ns'
+          cpucluster: 'cpuapp'
